@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF Merge — ToolVerse</title>
+<meta name="description" content="Birden fazla PDF dosyasını tek dosyada birleştir. Ücretsiz, dosyaların tarayıcından dışarı çıkmaz.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<style>
+  :root{
+    --bg:#FAFAFF; --surface:rgba(255,255,255,0.6); --surface-solid:#fff;
+    --border:rgba(20,20,40,0.08); --text:#14142B; --muted:#6B6B85;
+    --indigo:#5B5FEF; --teal:#14C8A4; --danger:#E5484D;
+    --shadow:0 8px 30px rgba(20,20,60,0.07); --radius:18px;
+  }
+  [data-theme="dark"]{
+    --bg:#0B0E1A; --surface:rgba(255,255,255,0.045); --surface-solid:#131629;
+    --border:rgba(255,255,255,0.09); --text:#F2F2FA; --muted:#8D8FA8;
+    --shadow:0 8px 30px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; transition:background .3s,color .3s;}
+  .display{font-family:'Space Grotesk',sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  a{color:inherit; text-decoration:none;}
+  header{ display:flex; justify-content:space-between; align-items:center; padding:18px 6%; border-bottom:1px solid var(--border); backdrop-filter: blur(14px); position:sticky; top:0; background: color-mix(in srgb, var(--bg) 70%, transparent); z-index:10;}
+  .logo{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px;}
+  .logo .dot{ width:9px; height:9px; border-radius:50%; background:linear-gradient(135deg,var(--indigo),var(--teal)); }
+  .back{ font-size:13px; color:var(--muted); font-weight:500;}
+  .theme-toggle{ width:40px; height:40px; border-radius:50%; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer;}
+  main{ max-width:680px; margin:0 auto; padding:50px 6% 100px; }
+  .eyebrow{ display:inline-flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); padding:6px 14px; border-radius:100px; font-size:12.5px; font-weight:600; color:var(--indigo); margin-bottom:18px;}
+  h1{ font-size:32px; margin-bottom:8px; letter-spacing:-0.5px;}
+  .sub{ color:var(--muted); font-size:14.5px; margin-bottom:30px;}
+  .panel{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:28px; backdrop-filter:blur(14px); box-shadow:var(--shadow);}
+  .dropzone{
+    border:2px dashed var(--border); border-radius:14px; padding:40px 20px; text-align:center;
+    cursor:pointer; margin-bottom:18px; transition: border-color .2s;
+  }
+  .dropzone:hover, .dropzone.drag{ border-color:var(--indigo); }
+  .dropzone .icon{ font-size:30px; margin-bottom:10px; }
+  .dropzone p{ color:var(--muted); font-size:13.5px; }
+  #fileInput{ display:none; }
+  #fileList{ display:flex; flex-direction:column; gap:8px; margin-bottom:18px;}
+  .file-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--surface-solid); border:1px solid var(--border); border-radius:10px; padding:10px 14px; font-size:13px;
+  }
+  .file-row .name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;}
+  .file-row .order-btns{ display:flex; gap:4px;}
+  .file-row button{ background:none; border:none; cursor:pointer; color:var(--muted); font-size:14px;}
+  .file-row button:hover{ color:var(--indigo); }
+  .btn{ width:100%; padding:15px; border:none; border-radius:12px; font-weight:700; font-size:14.5px; cursor:pointer; background:linear-gradient(120deg,var(--indigo),var(--teal)); color:white;}
+  .btn:disabled{ opacity:0.5; cursor:not-allowed; }
+  .status{ margin-top:14px; font-size:13px; text-align:center; color:var(--muted); min-height:18px;}
+  .status.error{ color:var(--danger); }
+  .status.success{ color:var(--teal); font-weight:600;}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="dot"></div><span class="display">ToolVerse</span></div>
+  <a class="back" href="../index.html">← Tüm araçlar</a>
+  <div class="theme-toggle" id="themeToggle">🌙</div>
+</header>
+<main>
+  <div class="eyebrow">▤ PDF ARACI</div>
+  <h1 class="display">PDF Merge</h1>
+  <p class="sub">Birden fazla PDF dosyasını sırayla birleştir. Tüm işlem tarayıcında yapılır, dosyaların hiçbir sunucuya yüklenmez.</p>
+
+  <div class="panel">
+    <div class="dropzone" id="dropzone">
+      <div class="icon">▤</div>
+      <p><strong style="color:var(--text)">Dosya seçmek için tıkla</strong> veya sürükleyip bırak<br>(sadece .pdf)</p>
+    </div>
+    <input type="file" id="fileInput" accept="application/pdf" multiple>
+
+    <div id="fileList"></div>
+
+    <button class="btn" id="mergeBtn" disabled>PDF'leri Birleştir ve İndir</button>
+    <div class="status" id="status"></div>
+  </div>
+</main>
+<script>
+  const root = document.documentElement;
+  const themeToggle = document.getElementById('themeToggle');
+  function setTheme(t){ root.setAttribute('data-theme',t); themeToggle.textContent = t==='dark' ? '☀️' : '🌙'; }
+  setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  themeToggle.onclick = ()=> setTheme(root.getAttribute('data-theme')==='dark' ? 'light':'dark');
+
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const fileList = document.getElementById('fileList');
+  const mergeBtn = document.getElementById('mergeBtn');
+  const status = document.getElementById('status');
+  let files = [];
+
+  dropzone.onclick = ()=> fileInput.click();
+  dropzone.addEventListener('dragover', e=>{ e.preventDefault(); dropzone.classList.add('drag'); });
+  dropzone.addEventListener('dragleave', ()=> dropzone.classList.remove('drag'));
+  dropzone.addEventListener('drop', e=>{
+    e.preventDefault(); dropzone.classList.remove('drag');
+    addFiles(Array.from(e.dataTransfer.files).filter(f=>f.type==='application/pdf'));
+  });
+  fileInput.addEventListener('change', e=> addFiles(Array.from(e.target.files)));
+
+  function addFiles(newFiles){
+    files = files.concat(newFiles);
+    renderList();
+  }
+
+  function renderList(){
+    fileList.innerHTML = '';
+    files.forEach((f, i)=>{
+      const row = document.createElement('div');
+      row.className = 'file-row';
+      row.innerHTML = '<span class="name">'+(i+1)+'. '+f.name+'</span>'+
+        '<div class="order-btns">'+
+        '<button data-act="up" data-i="'+i+'" title="Yukarı">↑</button>'+
+        '<button data-act="down" data-i="'+i+'" title="Aşağı">↓</button>'+
+        '<button data-act="remove" data-i="'+i+'" title="Kaldır">✕</button>'+
+        '</div>';
+      fileList.appendChild(row);
+    });
+    fileList.querySelectorAll('button').forEach(btn=>{
+      btn.onclick = ()=>{
+        const i = parseInt(btn.dataset.i);
+        if(btn.dataset.act === 'remove') files.splice(i,1);
+        if(btn.dataset.act === 'up' && i>0) [files[i-1],files[i]] = [files[i],files[i-1]];
+        if(btn.dataset.act === 'down' && i<files.length-1) [files[i+1],files[i]] = [files[i],files[i+1]];
+        renderList();
+      };
+    });
+    mergeBtn.disabled = files.length < 2;
+    status.textContent = files.length === 1 ? 'Birleştirmek için en az 2 PDF seçmelisin.' : '';
+    status.className = 'status';
+  }
+
+  mergeBtn.onclick = async ()=>{
+    mergeBtn.disabled = true;
+    status.textContent = 'Birleştiriliyor...'; status.className = 'status';
+    try{
+      const { PDFDocument } = PDFLib;
+      const mergedPdf = await PDFDocument.create();
+      for(const file of files){
+        const bytes = await file.arrayBuffer();
+        const pdf = await PDFDocument.load(bytes);
+        const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+        pages.forEach(p => mergedPdf.addPage(p));
+      }
+      const mergedBytes = await mergedPdf.save();
+      const blob = new Blob([mergedBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'birlestirilmis.pdf'; a.click();
+      URL.revokeObjectURL(url);
+      status.textContent = '✓ Başarıyla birleştirildi ve indirildi.'; status.className = 'status success';
+    }catch(e){
+      status.textContent = '✕ Hata: ' + e.message; status.className = 'status error';
+    }
+    mergeBtn.disabled = files.length < 2;
+  };
+</script>
+</body>
+</html>

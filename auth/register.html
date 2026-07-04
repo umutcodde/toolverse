@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kayıt Ol — ToolVerse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAFAFF; --surface:rgba(255,255,255,0.6); --surface-solid:#fff;
+    --border:rgba(20,20,40,0.08); --text:#14142B; --muted:#6B6B85;
+    --indigo:#5B5FEF; --teal:#14C8A4; --danger:#E5484D;
+    --shadow:0 8px 30px rgba(20,20,60,0.07); --radius:18px;
+  }
+  [data-theme="dark"]{
+    --bg:#0B0E1A; --surface:rgba(255,255,255,0.045); --surface-solid:#131629;
+    --border:rgba(255,255,255,0.09); --text:#F2F2FA; --muted:#8D8FA8;
+    --shadow:0 8px 30px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; display:flex; flex-direction:column;}
+  .display{font-family:'Space Grotesk',sans-serif;}
+  a{color:inherit; text-decoration:none;}
+  header{ display:flex; justify-content:space-between; align-items:center; padding:18px 6%;}
+  .logo{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px;}
+  .logo .dot{ width:9px; height:9px; border-radius:50%; background:linear-gradient(135deg,var(--indigo),var(--teal)); }
+  .back{ font-size:13px; color:var(--muted); font-weight:500;}
+  main{ flex:1; display:flex; align-items:center; justify-content:center; padding: 20px 6% 60px;}
+  .card{
+    width:100%; max-width:420px; background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:36px; backdrop-filter:blur(14px); box-shadow:var(--shadow);
+  }
+  h1{ font-size:26px; margin-bottom:6px; letter-spacing:-0.5px;}
+  .sub{ color:var(--muted); font-size:13.5px; margin-bottom:26px;}
+  .field{ margin-bottom:16px;}
+  .field label{ display:block; font-size:13px; font-weight:600; margin-bottom:7px;}
+  .field input{
+    width:100%; padding:13px 14px; border-radius:10px; border:1px solid var(--border);
+    background:var(--surface-solid); color:var(--text); font-size:14px; outline:none;
+  }
+  .field input:focus{ border-color:var(--indigo); }
+  .hint{ font-size:11.5px; color:var(--muted); margin-top:5px;}
+  .btn{ width:100%; padding:14px; border:none; border-radius:10px; font-weight:700; font-size:14.5px; cursor:pointer; background:linear-gradient(120deg,var(--indigo),var(--teal)); color:white; margin-top:6px;}
+  .btn:disabled{ opacity:0.6; cursor:not-allowed;}
+  .msg{ margin-top:14px; font-size:13px; padding:11px 14px; border-radius:10px; display:none;}
+  .msg.error{ background:color-mix(in srgb, var(--danger) 12%, transparent); color:var(--danger); display:block;}
+  .msg.success{ background:color-mix(in srgb, var(--teal) 14%, transparent); color:var(--teal); display:block; font-weight:600;}
+  .switch-link{ text-align:center; font-size:13.5px; color:var(--muted); margin-top:22px;}
+  .switch-link a{ color:var(--indigo); font-weight:600;}
+  .notice{
+    margin-top:20px; font-size:12px; color:var(--muted); background:var(--surface-solid);
+    border:1px solid var(--border); border-radius:10px; padding:12px 14px; line-height:1.5;
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="dot"></div><span class="display">ToolVerse</span></div>
+  <a class="back" href="../index.html">← Ana sayfa</a>
+</header>
+<main>
+  <div class="card">
+    <h1 class="display">Hesap Oluştur</h1>
+    <p class="sub">Ücretsiz — favori araçlarını kaydet, geçmişini gör.</p>
+
+    <form id="registerForm">
+      <div class="field">
+        <label for="email">E-posta</label>
+        <input type="email" id="email" required placeholder="ornek@eposta.com">
+      </div>
+      <div class="field">
+        <label for="password">Şifre</label>
+        <input type="password" id="password" required minlength="8" placeholder="En az 8 karakter">
+        <div class="hint">En az 8 karakter, bir rakam ve bir büyük harf içermeli.</div>
+      </div>
+      <div class="field">
+        <label for="password2">Şifre (Tekrar)</label>
+        <input type="password" id="password2" required minlength="8" placeholder="Şifreni tekrar gir">
+      </div>
+      <button class="btn" type="submit" id="submitBtn">Kayıt Ol</button>
+      <div class="msg" id="msg"></div>
+    </form>
+
+    <div class="switch-link">Zaten hesabın var mı? <a href="login.html">Giriş yap</a></div>
+
+    <div class="notice">
+      ⚠ Not: Bu form, ayrı olarak deploy edilmesi gereken ToolVerse Auth API'sine (<code>/api/auth/register</code>) istek atar. Backend ve veritabanı bağlanmadan kayıt işlemi tamamlanmaz — kurulum adımları <code>backend/README.md</code> dosyasında.
+    </div>
+  </div>
+</main>
+<script>
+  // API_BASE: backend'i deploy ettiğinde bu adresi kendi API URL'inle değiştir.
+  // Örn: const API_BASE = 'https://toolverse-api.onrender.com';
+  const API_BASE = '';
+
+  const form = document.getElementById('registerForm');
+  const msg = document.getElementById('msg');
+  const submitBtn = document.getElementById('submitBtn');
+
+  function showMsg(text, type){
+    msg.textContent = text;
+    msg.className = 'msg ' + type;
+  }
+
+  form.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const password2 = document.getElementById('password2').value;
+
+    if(password !== password2){
+      showMsg('Şifreler eşleşmiyor.', 'error');
+      return;
+    }
+    const strongEnough = /^(?=.*[A-Z])(?=.*\d).{8,}$/.test(password);
+    if(!strongEnough){
+      showMsg('Şifre en az 8 karakter, bir büyük harf ve bir rakam içermeli.', 'error');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Gönderiliyor...';
+
+    try{
+      const res = await fetch(API_BASE + '/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+
+      if(!res.ok){
+        showMsg(data.message || 'Kayıt sırasında bir hata oluştu.', 'error');
+      } else {
+        showMsg('✓ Kayıt başarılı! Doğrulama bağlantısı için e-postanı kontrol et.', 'success');
+        form.reset();
+      }
+    }catch(err){
+      showMsg('Sunucuya ulaşılamadı. Backend API henüz bağlı değil olabilir.', 'error');
+    }
+
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Kayıt Ol';
+  });
+</script>
+</body>
+</html>
