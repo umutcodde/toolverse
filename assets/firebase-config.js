@@ -1,9 +1,9 @@
-// Firebase Configuration - Güncellenmiş Versiyon
-// Google Firebase Console'dan config bilgilerinizi kopyalayıp yapıştırınız
+// Firebase Configuration
+// Google Firebase Console'dan config bilgilerinizi alın:
 // https://console.firebase.google.com/
 
 export const firebaseConfig = {
-  apiKey: "AIzaSyBkExample", // Firebase Console'dan al
+  apiKey: "AIzaSyBkExample",
   authDomain: "toolverse-app.firebaseapp.com",
   projectId: "toolverse-app",
   storageBucket: "toolverse-app.appspot.com",
@@ -11,6 +11,6 @@ export const firebaseConfig = {
   appId: "1:123456789:web:abcdefghijk"
 };
 
-// NOT: .env.local dosyasına taşınması önerilir
-// Frontend URL - Backend API ile iletişim
-export const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:4000';
+// Frontend API URL (Backend sunucusu)
+export const API_BASE = 'http://localhost:4000';
+// Production: https://toolverse-api.onrender.com
