@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Password Generator — ToolVerse</title>
+<meta name="description" content="Güçlü, rastgele ve güvenli şifreler saniyeler içinde üret. Ücretsiz, üyelik gerektirmez.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAFAFF; --surface:rgba(255,255,255,0.6); --surface-solid:#fff;
+    --border:rgba(20,20,40,0.08); --text:#14142B; --muted:#6B6B85;
+    --indigo:#5B5FEF; --teal:#14C8A4; --coral:#FF6B5D; --danger:#E5484D;
+    --shadow:0 8px 30px rgba(20,20,60,0.07); --radius:18px;
+  }
+  [data-theme="dark"]{
+    --bg:#0B0E1A; --surface:rgba(255,255,255,0.045); --surface-solid:#131629;
+    --border:rgba(255,255,255,0.09); --text:#F2F2FA; --muted:#8D8FA8;
+    --shadow:0 8px 30px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; transition:background .3s,color .3s; min-height:100vh;}
+  .display{font-family:'Space Grotesk',sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  a{color:inherit; text-decoration:none;}
+
+  header{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:18px 6%; border-bottom:1px solid var(--border);
+    backdrop-filter: blur(14px); position:sticky; top:0; background: color-mix(in srgb, var(--bg) 70%, transparent); z-index:10;
+  }
+  .logo{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px;}
+  .logo .dot{ width:9px; height:9px; border-radius:50%; background:linear-gradient(135deg,var(--indigo),var(--teal)); }
+  .back{ font-size:13px; color:var(--muted); font-weight:500;}
+  .theme-toggle{ width:40px; height:40px; border-radius:50%; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer;}
+
+  main{ max-width:640px; margin:0 auto; padding:60px 6% 100px; }
+  .eyebrow{ display:inline-flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); padding:6px 14px; border-radius:100px; font-size:12.5px; font-weight:600; color:var(--indigo); margin-bottom:18px;}
+  h1{ font-size:34px; margin-bottom:10px; letter-spacing:-0.5px;}
+  .sub{ color:var(--muted); font-size:14.5px; margin-bottom:36px;}
+
+  .panel{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:28px; backdrop-filter:blur(14px); box-shadow:var(--shadow);}
+
+  .output-row{ display:flex; gap:10px; margin-bottom:10px;}
+  #output{
+    flex:1; padding:18px; font-size:18px; border-radius:12px; border:1px solid var(--border);
+    background:var(--surface-solid); letter-spacing:0.5px; word-break:break-all;
+  }
+  .icon-btn{
+    width:56px; border-radius:12px; border:1px solid var(--border); background:var(--surface-solid);
+    cursor:pointer; font-size:17px; flex-shrink:0;
+  }
+  .icon-btn:hover{ border-color:var(--indigo); }
+
+  .strength-track{ height:6px; border-radius:4px; background:var(--border); overflow:hidden; margin-bottom:28px;}
+  .strength-fill{ height:100%; width:0%; border-radius:4px; transition: width .25s ease, background .25s ease; }
+  .strength-label{ font-size:12px; color:var(--muted); margin-bottom:24px; display:block;}
+
+  .row{ display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;}
+  .row label{ font-size:14px; font-weight:500;}
+  input[type=range]{ width:60%; accent-color:var(--indigo); }
+  .len-badge{ font-family:'JetBrains Mono',monospace; font-size:13px; background:var(--surface-solid); border:1px solid var(--border); padding:4px 10px; border-radius:8px;}
+
+  .toggle-row{ display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-top:1px solid var(--border); }
+  .switch{ position:relative; width:44px; height:24px; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .slider{ position:absolute; inset:0; background:var(--border); border-radius:100px; cursor:pointer; transition:.2s;}
+  .slider::before{ content:''; position:absolute; width:18px; height:18px; left:3px; top:3px; background:white; border-radius:50%; transition:.2s;}
+  input:checked + .slider{ background: var(--indigo); }
+  input:checked + .slider::before{ transform: translateX(20px); }
+
+  .generate-btn{
+    width:100%; margin-top:24px; padding:16px; border:none; border-radius:12px;
+    background: linear-gradient(120deg,var(--indigo),var(--teal)); color:white;
+    font-weight:700; font-size:15px; cursor:pointer;
+  }
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(120%);
+    background:var(--text); color:var(--bg); padding:13px 22px; border-radius:10px; font-size:13.5px; font-weight:600;
+    transition: transform .3s ease; z-index:100;
+  }
+  .toast.show{ transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><div class="dot"></div><span class="display">ToolVerse</span></div>
+  <a class="back" href="../index.html">← Tüm araçlar</a>
+  <div class="theme-toggle" id="themeToggle">🌙</div>
+</header>
+
+<main>
+  <div class="eyebrow">🔐 GÜVENLİK ARACI</div>
+  <h1 class="display">Password Generator</h1>
+  <p class="sub">Güçlü ve rastgele şifreler üret. Hiçbir veri sunucuya gönderilmez, tamamen tarayıcında çalışır.</p>
+
+  <div class="panel">
+    <div class="output-row">
+      <div id="output" class="mono">••••••••••••</div>
+      <button class="icon-btn" id="copyBtn" title="Kopyala">⧉</button>
+      <button class="icon-btn" id="refreshBtn" title="Yeniden üret">↻</button>
+    </div>
+    <div class="strength-track"><div class="strength-fill" id="strengthFill"></div></div>
+    <span class="strength-label" id="strengthLabel">Şifre gücü: —</span>
+
+    <div class="row">
+      <label>Uzunluk</label>
+      <input type="range" id="lengthRange" min="6" max="32" value="16">
+      <span class="len-badge mono" id="lengthBadge">16</span>
+    </div>
+
+    <div class="toggle-row">
+      <label>Büyük Harf (A-Z)</label>
+      <label class="switch"><input type="checkbox" id="upper" checked><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <label>Küçük Harf (a-z)</label>
+      <label class="switch"><input type="checkbox" id="lower" checked><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <label>Rakamlar (0-9)</label>
+      <label class="switch"><input type="checkbox" id="numbers" checked><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <label>Semboller (!@#$%)</label>
+      <label class="switch"><input type="checkbox" id="symbols" checked><span class="slider"></span></label>
+    </div>
+
+    <button class="generate-btn" id="generateBtn">Yeni Şifre Üret</button>
+  </div>
+</main>
+
+<div class="toast" id="toast">Panoya kopyalandı ✓</div>
+
+<script>
+  const root = document.documentElement;
+  const themeToggle = document.getElementById('themeToggle');
+  function setTheme(t){ root.setAttribute('data-theme',t); themeToggle.textContent = t==='dark' ? '☀️' : '🌙'; }
+  setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  themeToggle.onclick = ()=> setTheme(root.getAttribute('data-theme')==='dark' ? 'light':'dark');
+
+  const lengthRange = document.getElementById('lengthRange');
+  const lengthBadge = document.getElementById('lengthBadge');
+  const upper = document.getElementById('upper');
+  const lower = document.getElementById('lower');
+  const numbers = document.getElementById('numbers');
+  const symbols = document.getElementById('symbols');
+  const output = document.getElementById('output');
+  const strengthFill = document.getElementById('strengthFill');
+  const strengthLabel = document.getElementById('strengthLabel');
+
+  const SETS = {
+    upper: 'ABCDEFGHJKLMNPQRSTUVWXYZ',
+    lower: 'abcdefghijkmnopqrstuvwxyz',
+    numbers: '23456789',
+    symbols: '!@#$%^&*()_-+=?'
+  };
+
+  function secureRandomInt(max){
+    const arr = new Uint32Array(1);
+    crypto.getRandomValues(arr);
+    return arr[0] % max;
+  }
+
+  function generate(){
+    let pool = '';
+    if(upper.checked) pool += SETS.upper;
+    if(lower.checked) pool += SETS.lower;
+    if(numbers.checked) pool += SETS.numbers;
+    if(symbols.checked) pool += SETS.symbols;
+    if(!pool){ output.textContent = 'En az bir seçenek işaretli olmalı'; return; }
+
+    const len = parseInt(lengthRange.value);
+    let pass = '';
+    for(let i=0;i<len;i++){ pass += pool[secureRandomInt(pool.length)]; }
+    output.textContent = pass;
+    updateStrength(len, pool.length);
+  }
+
+  function updateStrength(len, poolSize){
+    const entropy = len * Math.log2(poolSize || 1);
+    let pct, color, label;
+    if(entropy < 40){ pct=30; color='var(--danger)'; label='Zayıf'; }
+    else if(entropy < 70){ pct=60; color='#F5B942'; label='Orta'; }
+    else if(entropy < 100){ pct=85; color='var(--teal)'; label='Güçlü'; }
+    else { pct=100; color='var(--indigo)'; label='Çok Güçlü'; }
+    strengthFill.style.width = pct + '%';
+    strengthFill.style.background = color;
+    strengthLabel.textContent = 'Şifre gücü: ' + label + ' (~' + Math.round(entropy) + ' bit entropi)';
+  }
+
+  lengthRange.addEventListener('input', ()=>{ lengthBadge.textContent = lengthRange.value; generate(); });
+  [upper,lower,numbers,symbols].forEach(el => el.addEventListener('change', generate));
+  document.getElementById('generateBtn').onclick = generate;
+  document.getElementById('refreshBtn').onclick = generate;
+
+  document.getElementById('copyBtn').onclick = ()=>{
+    navigator.clipboard.writeText(output.textContent).then(()=>{
+      const t = document.getElementById('toast');
+      t.classList.add('show');
+      setTimeout(()=> t.classList.remove('show'), 1800);
+    });
+  };
+
+  generate();
+</script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Giriş Yap — ToolVerse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAFAFF; --surface:rgba(255,255,255,0.6); --surface-solid:#fff;
+    --border:rgba(20,20,40,0.08); --text:#14142B; --muted:#6B6B85;
+    --indigo:#5B5FEF; --teal:#14C8A4; --danger:#E5484D;
+    --shadow:0 8px 30px rgba(20,20,60,0.07); --radius:18px;
+  }
+  [data-theme="dark"]{
+    --bg:#0B0E1A; --surface:rgba(255,255,255,0.045); --surface-solid:#131629;
+    --border:rgba(255,255,255,0.09); --text:#F2F2FA; --muted:#8D8FA8;
+    --shadow:0 8px 30px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; display:flex; flex-direction:column;}
+  .display{font-family:'Space Grotesk',sans-serif;}
+  a{color:inherit; text-decoration:none;}
+  header{ display:flex; justify-content:space-between; align-items:center; padding:18px 6%;}
+  .logo{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px;}
+  .logo .dot{ width:9px; height:9px; border-radius:50%; background:linear-gradient(135deg,var(--indigo),var(--teal)); }
+  .back{ font-size:13px; color:var(--muted); font-weight:500;}
+  main{ flex:1; display:flex; align-items:center; justify-content:center; padding: 20px 6% 60px;}
+  .card{
+    width:100%; max-width:420px; background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:36px; backdrop-filter:blur(14px); box-shadow:var(--shadow);
+  }
+  h1{ font-size:26px; margin-bottom:6px; letter-spacing:-0.5px;}
+  .sub{ color:var(--muted); font-size:13.5px; margin-bottom:26px;}
+  .field{ margin-bottom:16px;}
+  .field label{ display:flex; justify-content:space-between; font-size:13px; font-weight:600; margin-bottom:7px;}
+  .field label a{ color:var(--indigo); font-weight:600; font-size:12.5px;}
+  .field input{
+    width:100%; padding:13px 14px; border-radius:10px; border:1px solid var(--border);
+    background:var(--surface-solid); color:var(--text); font-size:14px; outline:none;
+  }
+  .field input:focus{ border-color:var(--indigo); }
+  .btn{ width:100%; padding:14px; border:none; border-radius:10px; font-weight:700; font-size:14.5px; cursor:pointer; background:linear-gradient(120deg,var(--indigo),var(--teal)); color:white; margin-top:6px;}
+  .btn:disabled{ opacity:0.6; cursor:not-allowed;}
+  .btn.ghost{ background:var(--surface-solid); border:1px solid var(--border); color:var(--text); margin-top:10px;}
+  .msg{ margin-top:14px; font-size:13px; padding:11px 14px; border-radius:10px; display:none;}
+  .msg.error{ background:color-mix(in srgb, var(--danger) 12%, transparent); color:var(--danger); display:block;}
+  .msg.success{ background:color-mix(in srgb, var(--teal) 14%, transparent); color:var(--teal); display:block; font-weight:600;}
+  .msg.warn{ background:color-mix(in srgb, #F5B942 16%, transparent); color:#9c7a1f; display:block; font-weight:600;}
+  [data-theme="dark"] .msg.warn{ color:#F5B942; }
+  .switch-link{ text-align:center; font-size:13.5px; color:var(--muted); margin-top:22px;}
+  .switch-link a{ color:var(--indigo); font-weight:600;}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="dot"></div><span class="display">ToolVerse</span></div>
+  <a class="back" href="../index.html">← Ana sayfa</a>
+</header>
+<main>
+  <div class="card">
+    <h1 class="display">Tekrar Hoş Geldin</h1>
+    <p class="sub">Hesabına giriş yap.</p>
+
+    <form id="loginForm">
+      <div class="field">
+        <label for="email">E-posta</label>
+        <input type="email" id="email" required placeholder="ornek@eposta.com" autocomplete="email">
+      </div>
+      <div class="field">
+        <label for="password">Şifre <a href="forgot-password.html">Şifremi unuttum</a></label>
+        <input type="password" id="password" required placeholder="Şifren" autocomplete="current-password">
+      </div>
+      <button class="btn" type="submit" id="submitBtn">Giriş Yap</button>
+      <button class="btn ghost" type="button" id="resendBtn" style="display:none;">Doğrulama E-postasını Tekrar Gönder</button>
+      <div class="msg" id="msg"></div>
+    </form>
+
+    <div class="switch-link">Hesabın yok mu? <a href="register.html">Kayıt ol</a></div>
+  </div>
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getAuth, signInWithEmailAndPassword, sendEmailVerification, signOut
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { firebaseConfig } from "../assets/firebase-config.js";
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  const form = document.getElementById('loginForm');
+  const msg = document.getElementById('msg');
+  const submitBtn = document.getElementById('submitBtn');
+  const resendBtn = document.getElementById('resendBtn');
+  let pendingUser = null;
+
+  function showMsg(text, type){ msg.textContent = text; msg.className = 'msg ' + type; }
+
+  function translateError(code){
+    const map = {
+      'auth/invalid-credential': 'E-posta veya şifre hatalı.',
+      'auth/invalid-email': 'Geçerli bir e-posta adresi girin.',
+      'auth/user-not-found': 'E-posta veya şifre hatalı.',
+      'auth/wrong-password': 'E-posta veya şifre hatalı.',
+      'auth/too-many-requests': 'Çok fazla deneme yapıldı. Lütfen biraz bekleyip tekrar dene.',
+      'auth/network-request-failed': 'Bağlantı hatası, internetini kontrol et.',
+      'auth/configuration-not-found': 'Firebase yapılandırması eksik — firebase-config.js dosyasını kontrol et.'
+    };
+    return map[code] || 'Giriş sırasında bir hata oluştu.';
+  }
+
+  form.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    submitBtn.disabled = true; submitBtn.textContent = 'Giriş yapılıyor...';
+    resendBtn.style.display = 'none';
+
+    try{
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+
+      if(!cred.user.emailVerified){
+        pendingUser = cred.user;
+        showMsg('E-posta adresini henüz doğrulamadın. Gelen kutunu kontrol et.', 'warn');
+        resendBtn.style.display = 'block';
+        // Not: Burada bilinçli olarak signOut çağırmıyoruz — "tekrar gönder"
+        // butonunun çalışabilmesi için Firebase'in geçerli bir oturuma
+        // ihtiyacı var. Kullanıcı doğrulamadan siteyi tam kullanamayacak
+        // şekilde kısıtlamak istersen, index.html'deki onAuthStateChanged
+        // kontrolü emailVerified false ise erişimi sınırlayabilir.
+      } else {
+        showMsg('✓ Giriş başarılı, yönlendiriliyorsun...', 'success');
+        setTimeout(()=> window.location.href = '../index.html', 800);
+      }
+    }catch(err){
+      showMsg(translateError(err.code), 'error');
+    }
+
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Giriş Yap';
+  });
+
+  resendBtn.addEventListener('click', async ()=>{
+    if(!pendingUser) return;
+    resendBtn.disabled = true;
+    try{
+      await sendEmailVerification(pendingUser);
+      showMsg('✓ Doğrulama e-postası tekrar gönderildi.', 'success');
+    }catch(err){
+      showMsg('E-posta gönderilemedi, birazdan tekrar dene.', 'error');
+    }
+    resendBtn.disabled = false;
+  });
+</script>
+</body>
+</html>

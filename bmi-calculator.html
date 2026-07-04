@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Base64 Encode/Decode — ToolVerse</title>
+<meta name="description" content="Metni Base64 formatına çevir veya çöz. Ücretsiz, tarayıcında çalışır.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAFAFF; --surface:rgba(255,255,255,0.6); --surface-solid:#fff;
+    --border:rgba(20,20,40,0.08); --text:#14142B; --muted:#6B6B85;
+    --indigo:#5B5FEF; --teal:#14C8A4; --danger:#E5484D;
+    --shadow:0 8px 30px rgba(20,20,60,0.07); --radius:18px;
+  }
+  [data-theme="dark"]{
+    --bg:#0B0E1A; --surface:rgba(255,255,255,0.045); --surface-solid:#131629;
+    --border:rgba(255,255,255,0.09); --text:#F2F2FA; --muted:#8D8FA8;
+    --shadow:0 8px 30px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; transition:background .3s,color .3s;}
+  .display{font-family:'Space Grotesk',sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  a{color:inherit; text-decoration:none;}
+  header{ display:flex; justify-content:space-between; align-items:center; padding:18px 6%; border-bottom:1px solid var(--border); backdrop-filter: blur(14px); position:sticky; top:0; background: color-mix(in srgb, var(--bg) 70%, transparent); z-index:10;}
+  .logo{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px;}
+  .logo .dot{ width:9px; height:9px; border-radius:50%; background:linear-gradient(135deg,var(--indigo),var(--teal)); }
+  .back{ font-size:13px; color:var(--muted); font-weight:500;}
+  .theme-toggle{ width:40px; height:40px; border-radius:50%; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer;}
+  main{ max-width:900px; margin:0 auto; padding:50px 6% 100px; }
+  .eyebrow{ display:inline-flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); padding:6px 14px; border-radius:100px; font-size:12.5px; font-weight:600; color:var(--indigo); margin-bottom:18px;}
+  h1{ font-size:32px; margin-bottom:8px; letter-spacing:-0.5px;}
+  .sub{ color:var(--muted); font-size:14.5px; margin-bottom:30px;}
+  .toolbar{ display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;}
+  .btn{ padding:11px 18px; border-radius:10px; border:1px solid var(--border); background:var(--surface-solid); font-size:13.5px; font-weight:600; cursor:pointer;}
+  .btn.primary{ background:linear-gradient(120deg,var(--indigo),var(--teal)); color:white; border:none;}
+  .btn:hover{ border-color:var(--indigo);}
+  .grid{ display:grid; grid-template-columns:1fr auto 1fr; gap:16px; align-items:stretch;}
+  @media (max-width:800px){ .grid{grid-template-columns:1fr;} .swap-btn{ margin:0 auto; transform:rotate(90deg);} }
+  .panel{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px; backdrop-filter:blur(14px); box-shadow:var(--shadow);}
+  .panel h3{ font-size:12.5px; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); margin-bottom:10px;}
+  textarea{
+    width:100%; height:320px; resize:vertical; border:1px solid var(--border); border-radius:12px;
+    background:var(--surface-solid); color:var(--text); padding:16px; font-size:13.5px; line-height:1.6;
+    font-family:'JetBrains Mono',monospace; outline:none;
+  }
+  textarea:focus{ border-color:var(--indigo);}
+  .swap-btn{ align-self:center; width:44px; height:44px; border-radius:50%; background:var(--surface-solid); border:1px solid var(--border); cursor:pointer; font-size:18px;}
+  .error-box{ margin-top:12px; padding:12px 16px; border-radius:10px; background:color-mix(in srgb, var(--danger) 12%, transparent); color:var(--danger); font-size:13px; display:none;}
+  .error-box.show{ display:block; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="dot"></div><span class="display">ToolVerse</span></div>
+  <a class="back" href="../index.html">← Tüm araçlar</a>
+  <div class="theme-toggle" id="themeToggle">🌙</div>
+</header>
+<main>
+  <div class="eyebrow">64 GELİŞTİRİCİ ARACI</div>
+  <h1 class="display">Base64 Encode / Decode</h1>
+  <p class="sub">Metni Base64'e çevir ya da Base64 veriyi çöz. Türkçe karakterler dahil tüm Unicode desteklenir.</p>
+
+  <div class="toolbar">
+    <button class="btn primary" id="encodeBtn">Encode Et →</button>
+    <button class="btn primary" id="decodeBtn">← Decode Et</button>
+    <button class="btn" id="clearBtn">Temizle</button>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <h3>Düz Metin</h3>
+      <textarea id="plainBox" placeholder="Buraya normal metni yaz..."></textarea>
+    </div>
+    <div class="swap-btn" id="swapBtn" title="Yönü değiştir">⇄</div>
+    <div class="panel">
+      <h3>Base64</h3>
+      <textarea id="b64Box" class="mono" placeholder="Buraya Base64 veriyi yapıştır..."></textarea>
+    </div>
+  </div>
+  <div class="error-box" id="errorBox"></div>
+</main>
+<script>
+  const root = document.documentElement;
+  const themeToggle = document.getElementById('themeToggle');
+  function setTheme(t){ root.setAttribute('data-theme',t); themeToggle.textContent = t==='dark' ? '☀️' : '🌙'; }
+  setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  themeToggle.onclick = ()=> setTheme(root.getAttribute('data-theme')==='dark' ? 'light':'dark');
+
+  const plainBox = document.getElementById('plainBox');
+  const b64Box = document.getElementById('b64Box');
+  const errorBox = document.getElementById('errorBox');
+
+  function showError(msg){ errorBox.textContent = '✕ ' + msg; errorBox.classList.add('show'); }
+  function hideError(){ errorBox.classList.remove('show'); }
+
+  function encode(){
+    hideError();
+    try{
+      b64Box.value = btoa(unescape(encodeURIComponent(plainBox.value)));
+    }catch(e){ showError('Encode edilemedi: ' + e.message); }
+  }
+
+  function decode(){
+    hideError();
+    try{
+      plainBox.value = decodeURIComponent(escape(atob(b64Box.value.trim())));
+    }catch(e){ showError('Geçersiz Base64 verisi.'); }
+  }
+
+  document.getElementById('encodeBtn').onclick = encode;
+  document.getElementById('decodeBtn').onclick = decode;
+  document.getElementById('clearBtn').onclick = ()=>{ plainBox.value=''; b64Box.value=''; hideError(); };
+  document.getElementById('swapBtn').onclick = ()=>{
+    const tmp = plainBox.value; plainBox.value = b64Box.value; b64Box.value = tmp; hideError();
+  };
+</script>
+</body>
+</html>
