@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Counter — ToolVerse</title>
+<meta name="description" content="Kelime, karakter, cümle sayısını ve okuma süresini anında hesapla.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAFAFF; --surface:rgba(255,255,255,0.6); --surface-solid:#fff;
+    --border:rgba(20,20,40,0.08); --text:#14142B; --muted:#6B6B85;
+    --indigo:#5B5FEF; --teal:#14C8A4;
+    --shadow:0 8px 30px rgba(20,20,60,0.07); --radius:18px;
+  }
+  [data-theme="dark"]{
+    --bg:#0B0E1A; --surface:rgba(255,255,255,0.045); --surface-solid:#131629;
+    --border:rgba(255,255,255,0.09); --text:#F2F2FA; --muted:#8D8FA8;
+    --shadow:0 8px 30px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; transition:background .3s,color .3s;}
+  .display{font-family:'Space Grotesk',sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  a{color:inherit; text-decoration:none;}
+
+  header{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:18px 6%; border-bottom:1px solid var(--border);
+    backdrop-filter: blur(14px); position:sticky; top:0; background: color-mix(in srgb, var(--bg) 70%, transparent); z-index:10;
+  }
+  .logo{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px;}
+  .logo .dot{ width:9px; height:9px; border-radius:50%; background:linear-gradient(135deg,var(--indigo),var(--teal)); }
+  .back{ font-size:13px; color:var(--muted); font-weight:500;}
+  .theme-toggle{ width:40px; height:40px; border-radius:50%; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer;}
+
+  main{ max-width:760px; margin:0 auto; padding:50px 6% 100px; }
+  .eyebrow{ display:inline-flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); padding:6px 14px; border-radius:100px; font-size:12.5px; font-weight:600; color:var(--indigo); margin-bottom:18px;}
+  h1{ font-size:32px; margin-bottom:8px; letter-spacing:-0.5px;}
+  .sub{ color:var(--muted); font-size:14.5px; margin-bottom:30px;}
+
+  textarea{
+    width:100%; height:280px; resize:vertical; border:1px solid var(--border); border-radius:var(--radius);
+    background:var(--surface); color:var(--text); padding:20px; font-size:15px; line-height:1.7;
+    outline:none; font-family:'Inter',sans-serif; box-shadow:var(--shadow); backdrop-filter:blur(14px);
+  }
+  textarea:focus{ border-color:var(--indigo); }
+
+  .stats{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:20px;}
+  @media (max-width:600px){ .stats{grid-template-columns:repeat(2,1fr);} }
+  .stat-card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px; text-align:center; backdrop-filter:blur(14px);}
+  .stat-card strong{ display:block; font-size:24px; font-family:'Space Grotesk',sans-serif; color:var(--indigo);}
+  .stat-card span{ font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.4px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><div class="dot"></div><span class="display">ToolVerse</span></div>
+  <a class="back" href="../index.html">← Tüm araçlar</a>
+  <div class="theme-toggle" id="themeToggle">🌙</div>
+</header>
+
+<main>
+  <div class="eyebrow">✎ METİN ARACI</div>
+  <h1 class="display">Word Counter</h1>
+  <p class="sub">Metnini yapıştır, kelime/karakter sayısı ve tahmini okuma süresi anında güncellensin.</p>
+
+  <textarea id="text" placeholder="Metnini buraya yapıştır veya yazmaya başla..."></textarea>
+
+  <div class="stats">
+    <div class="stat-card"><strong class="mono" id="wordCount">0</strong><span>Kelime</span></div>
+    <div class="stat-card"><strong class="mono" id="charCount">0</strong><span>Karakter</span></div>
+    <div class="stat-card"><strong class="mono" id="sentenceCount">0</strong><span>Cümle</span></div>
+    <div class="stat-card"><strong class="mono" id="readTime">0 dk</strong><span>Okuma Süresi</span></div>
+  </div>
+</main>
+
+<script>
+  const root = document.documentElement;
+  const themeToggle = document.getElementById('themeToggle');
+  function setTheme(t){ root.setAttribute('data-theme',t); themeToggle.textContent = t==='dark' ? '☀️' : '🌙'; }
+  setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  themeToggle.onclick = ()=> setTheme(root.getAttribute('data-theme')==='dark' ? 'light':'dark');
+
+  const text = document.getElementById('text');
+  const wordCount = document.getElementById('wordCount');
+  const charCount = document.getElementById('charCount');
+  const sentenceCount = document.getElementById('sentenceCount');
+  const readTime = document.getElementById('readTime');
+
+  function update(){
+    const val = text.value;
+    const words = val.trim().length ? val.trim().split(/\s+/) : [];
+    const sentences = val.trim().length ? val.split(/[.!?]+/).filter(s => s.trim().length > 0) : [];
+    const minutes = words.length / 200;
+
+    wordCount.textContent = words.length;
+    charCount.textContent = val.length;
+    sentenceCount.textContent = sentences.length;
+    readTime.textContent = minutes < 1 && words.length > 0
+      ? '<1 dk'
+      : Math.round(minutes) + ' dk';
+  }
+
+  text.addEventListener('input', update);
+  update();
+</script>
+</body>
+</html>
