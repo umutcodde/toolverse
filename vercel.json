@@ -2,7 +2,6 @@
   "version": 2,
   "buildCommand": "npm run build 2>/dev/null || echo 'No build needed'",
   "outputDirectory": ".",
-  "public": true,
   "headers": [
     {
       "source": "/(.*)",
